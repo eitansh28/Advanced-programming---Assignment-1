@@ -9,4 +9,4 @@ myshell.o: myshell.c
 .PHONY: clean all
 
 clean:
-	rm -f *.o *.a myshell
+	rm -f *.o myshell

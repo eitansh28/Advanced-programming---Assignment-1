@@ -95,7 +95,7 @@ while (exit==0)
         else if (redirect == 2){
             fd = creat(outfile, 0660); 
             close (STDERR_FILENO) ; 
-            dup(fd); 
+            dup2(2, fd); 
             close(fd);
         }
         execvp(argv[0], argv);
