@@ -7,6 +7,10 @@
 #include "unistd.h"
 #include <string.h>
 
+void sigint_handler(int signum) {
+    printf("You typed Control-C!\n");
+}
+
 int main() {
 char command[1024];
 char *token;
@@ -14,6 +18,9 @@ char *outfile;
 int exit = 0, i, fd, amper, redirect, retid, status;
 char *argv[10];
 char *prompt_name = "hello";
+char variable[] = "VARIABLE=value";
+
+signal(SIGINT, sigint_handler);   //Q8   ---- need to check about another programs (and it's show the word '^C')
 
 
 while (exit==0)
@@ -50,11 +57,26 @@ while (exit==0)
         continue;
     }
 
-    if (! strcmp(argv[0], "echo")){   //Q3
-        for (int j = 1; j < i; j++) {
-            printf("%s ", argv[j]);
+    if (! strcmp(argv[0], "echo")){   //Q3 && Q4
+        if(! strcmp(argv[1], "$?")){
+            system("echo $?");
         }
-        printf("\n");
+        else {
+            for (int j = 1; j < i; j++) {
+            printf("%s ", argv[j]);
+            }
+            printf("\n");
+        }
+        continue;
+    }
+
+    if (! strcmp(argv[0], "cd")){   //Q5
+        chdir(argv[1]);
+        continue;
+    }
+
+    if (! strcmp(argv[0], "!!")) {  //Q6 ---- doesn't work yet
+        system("!!");
         continue;
     }
 
@@ -63,10 +85,18 @@ while (exit==0)
         continue;
     }
 
-    if (! strcmp(argv[0], "cd")){   //Q5
-        chdir(argv[1]);
+    if (argv[0][0] == '$'){   //Q10 ---not finished
+        printf("var!!\n");
         continue;
     }
+
+    if (! strcmp(argv[i - 2], ">>")){    //Q1.2  ---not finished
+        FILE *file = fopen(argv[i-1],"a+");
+        fprintf(file, argv[i-3]);
+        fclose(file);
+        continue;
+        }
+
 
     if (! strcmp(argv[i - 2], ">")) {
         redirect = 1;
@@ -92,11 +122,16 @@ while (exit==0)
             close(fd); 
             /* stdout is now redirected */
         }
-        else if (redirect == 2){
-            fd = creat(outfile, 0660); 
-            close (STDERR_FILENO) ; 
-            dup2(2, fd); 
-            close(fd);
+        if (redirect == 2){
+            if (freopen(outfile, "w", stderr) == NULL) {
+            perror("freopen error");
+            return 1;
+            }
+        // Restore stderr to its original stream
+        if (freopen("/dev/stderr", "w", stderr) == NULL) {
+            perror("freopen error");
+            return 1;
+            }
         }
         execvp(argv[0], argv);
     }
